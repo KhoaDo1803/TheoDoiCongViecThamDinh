@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Công Việc – CPC1HN QLCL</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+
+  :root {
+    --bg: #f4f5f7; --surface: #ffffff; --surface2: #f0f1f3; --border: #e2e4e9;
+    --text: #1a1d23; --text2: #5e6577; --text3: #9ca3af;
+    --blue: #2563eb; --blue-bg: #eff6ff; --green: #16a34a; --green-bg: #f0fdf4;
+    --amber: #b45309; --amber-bg: #fffbeb; --red: #dc2626; --red-bg: #fef2f2;
+    --purple: #7c3aed; --purple-bg: #f5f3ff;
+    --radius: 10px; --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; padding-bottom: 40px;}
+
+  /* 🟢 GIAO DIỆN ĐĂNG NHẬP */
+  .login-wrapper { position: fixed; inset: 0; background: var(--surface2); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+  .login-box { background: var(--surface); padding: 40px; border-radius: 16px; box-shadow: var(--shadow); width: 360px; text-align: left; }
+  .login-box h2 { margin-bottom: 24px; color: var(--blue); text-align: center; font-size: 20px;}
+
+  /* Lõi Layout */
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .logo { font-size: 15px; font-weight: 600; color: var(--text); }
+  .logo span { color: var(--blue); }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .main { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+
+  /* Nút bấm */
+  .btn { padding: 7px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); display: inline-flex; align-items: center; gap: 6px; transition: .15s; font-weight: 500; }
+  .btn:hover { background: var(--surface2); }
+  .btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-green { background: var(--green); color: #fff; border-color: var(--green); }
+  .btn-green:hover { background: #15803d; }
+  .btn-purple { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .btn-purple:hover { background: #6d28d9; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* 🟢 THỐNG KÊ & BÁO ĐỘNG */
+  .metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 20px; }
+  .mcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+  .mcard-label { font-size: 12px; color: var(--text2); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .mcard-val { font-size: 28px; font-weight: 700; line-height: 1; }
+  .mcard-sub { font-size: 11px; color: var(--text3); margin-top: 6px; }
+  .mcard.m-blue { border-top: 3px solid var(--blue); }
+  .mcard.m-green { border-top: 3px solid var(--green); }
+  .mcard.m-amber { border-top: 3px solid #d97706; }
+  .mcard.m-red { border-top: 3px solid var(--red); }
+  
+  /* Alert Bar */
+  .alert-bar { background: var(--red-bg); border: 1px solid #fca5a5; border-radius: var(--radius); padding: 12px 16px; margin-bottom: 16px; color: #991b1b; font-size: 13px; display: flex; align-items: flex-start; gap: 10px; }
+
+  /* Focus Board */
+  .focus-board { background: #fff5f5; border: 1px solid #fecaca; border-radius: var(--radius); padding: 16px; margin-bottom: 20px; display: none; }
+  .focus-title { font-size: 14px; font-weight: 700; color: #b91c1c; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .focus-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .focus-item { background: #fff; border: 1px solid #fca5a5; border-left: 4px solid #ef4444; border-radius: 6px; padding: 12px; box-shadow: 0 1px 2px rgba(220,38,38,0.1); }
+  .focus-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .focus-meta { font-size: 11px; color: var(--text2); display: flex; justify-content: space-between; align-items: center; }
+
+  /* Grid & Card */
+  .content-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .card-body { padding: 16px 18px; }
+
+  /* Bảng công việc */
+  .filters { display: flex; gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--border); }
+  .filter-btn { padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text2); transition: .15s; }
+  .filter-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .task-table { width: 100%; border-collapse: collapse; }
+  .task-table th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .task-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .task-name { font-size: 13px; color: var(--text); }
+  .task-name.done { text-decoration: line-through; color: var(--text3); }
+  .dl-text { font-size: 12px; color: var(--text2); }
+  .dl-overdue { font-size: 12px; color: var(--red); font-weight: 500; }
+  .status-sel { font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; }
+
+  /* Sidebar */
+  .sidebar { display: flex; flex-direction: column; gap: 16px; }
+  .chart-wrap { position: relative; height: 200px; }
+  .legend { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .legend-item { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); }
+  .remind-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .remind-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+  .remind-text { flex: 1; min-width: 0; }
+  .remind-name { font-size: 13px; font-weight: 500; line-height: 1.4; margin-bottom: 4px; color: var(--text); }
+  .remind-time { font-size: 11px; color: var(--text3); }
+  .assignee { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; font-size: 10px; font-weight: 600; background: var(--blue-bg); color: var(--blue); border: 1px solid #bfdbfe; }
+  .source-badge { display: inline-block; font-size: 11px; font-weight: 600; color: #b45309; background: #fef3c7; padding: 3px 8px; border-radius: 6px; border: 1px solid #fde68a; line-height: 1.2;}
+
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; border: 1px solid; text-transform: uppercase; }
+  .badge-admin { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+  .badge-super { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+  .badge-oper { background: #f0fdf4; color: #16a34a; border-color: #86efac; }
+
+  /* 🟢 MODALS & FORMS */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99999; display: none; align-items: center; justify-content: center; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 14px; padding: 24px; width: 520px; max-width: 90vw; }
+  .modal.xl { width: 880px; max-height: 90vh; overflow-y: visible; } 
+  .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 15px; }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field-group { margin-bottom: 16px; position: relative; }
+  .field-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; }
+  .field-group input[type="url"], .field-group input[type="text"], .field-group input[type="password"], .field-group input[type="date"], .field-group input[type="number"], .field-group input[type="email"], .field-group select, .field-group textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+  /* 🟢 REPORT STYLES */
+  .report-box { background: var(--surface2); padding: 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; border: 1px solid var(--border); }
+  .report-list { margin-top: 8px; padding-left: 20px; color: var(--text2); }
+
+  /* Custom Dropdowns */
+  .custom-dropdown { position: relative; width: 100%; }
+  .dd-header { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--surface); display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: var(--text); min-height: 40px;}
+  .dd-header:hover { border-color: var(--blue); }
+  .dd-header.active { border-color: var(--blue); outline: 2px solid var(--blue-bg); }
+  .dd-menu { position: absolute; top: calc(100% + 4px); left: 0; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1000; display: none; flex-direction: column; overflow: hidden;}
+  .dd-menu.open { display: flex; }
+  .dd-list { max-height: 180px; overflow-y: auto; padding: 6px; }
+  .dd-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-radius: 6px; transition: 0.15s; }
+  .dd-item:hover { background: var(--surface2); }
+  .dd-item label { flex: 1; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); cursor: pointer; margin: 0; font-weight: normal; text-transform: none; }
+  .dd-item input { width: 16px; height: 16px; cursor: pointer; margin: 0; accent-color: var(--blue); }
+  .del-opt { color: var(--text3); cursor: pointer; font-size: 14px; background: none; border: none; padding: 2px 6px; border-radius: 4px; }
+  .del-opt:hover { color: var(--red); background: var(--red-bg); }
+  .dd-footer { padding: 10px; border-top: 1px solid var(--border); background: var(--surface2); display: flex; gap: 6px; }
+  .dd-footer input { flex: 1; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; }
+  
+  /* Utils */
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .sync-dot.ok { background: var(--green); } .sync-dot.syncing { background: #d97706; animation: pulse .8s infinite; } .sync-dot.err { background: var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,.8); display: flex; align-items: center; justify-content: center; z-index: 10; }
+  .empty { text-align: center; padding: 30px; color: var(--text3); }
+  .prog-track { background: var(--surface2); border-radius: 4px; height: 6px; margin-top: 8px; }
+  .prog-fill { height: 6px; border-radius: 4px; transition: width .5s; }
+
+/* Dropdown Hành động trong bảng */
+.action-dropdown { position: relative; display: inline-block; }
+.action-btn { background: var(--surface); border: 1px solid var(--border); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text2); display: flex; align-items: center; gap: 4px; }
+.action-btn:hover { background: var(--surface2); }
+.action-menu { position: absolute; right: 0; top: 100%; background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); display: none; z-index: 1000; min-width: 150px; overflow: hidden; margin-top: 4px; }
+.action-menu.open { display: block; }
+.action-item { padding: 10px 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.15s; font-size: 13px; color: var(--text); }
+.action-item:hover { background: var(--blue-bg); color: var(--blue); }
+.action-item.danger:hover { background: var(--red-bg); color: var(--red); }
+
+</style>
+</head>
+<body>
+
+<div id="login-screen" class="login-wrapper">
+  <div class="login-box">
+    <h2>👋 Hệ Thống QLCL</h2>
+    <div class="field-group">
+      <label>Tài khoản</label>
+      <input type="text" id="login-user" placeholder="Nhập tên đăng nhập..." onkeypress="if(event.key==='Enter') login()">
+    </div>
+    <div class="field-group">
+      <label>Mật khẩu</label>
+      <input type="password" id="login-pass" placeholder="Nhập mật khẩu..." onkeypress="if(event.key==='Enter') login()">
+    </div>
+    <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:10px; padding: 12px" onclick="login()">Đăng nhập</button>
+    <button class="btn" style="width:100%; justify-content:center; margin-top:10px; padding: 12px" onclick="openModal()">⚙️ Sửa cấu hình kết nối</button>
+    <div id="login-err" style="color:var(--red); font-size:13px; margin-top:12px; text-align:center; display:none; font-weight:600">Sai thông tin đăng nhập!</div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-pwd">
+  <div class="modal">
+    <h2>🔑 Đổi mật khẩu</h2>
+    <div class="field-group"><label>Mật khẩu mới</label><input type="password" id="new-pwd" placeholder="Ít nhất 6 ký tự"></div>
+    <div class="field-group"><label>Xác nhận mật khẩu</label><input type="password" id="confirm-pwd" placeholder="Nhập lại mật khẩu mới"></div>
+    <div class="modal-footer"><button class="btn" onclick="document.getElementById('modal-pwd').classList.remove('open')">Huỷ</button><button class="btn btn-primary" onclick="updatePassword()">Cập nhật</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h2>⚙️ Cấu hình n8n & Auth</h2>
+    <div class="field-group"><label>Webhook Đọc Auth (GET)</label><input id="cfg-auth-read" type="url" /></div>
+    <div class="field-group"><label>Webhook Đổi Pass (POST)</label><input id="cfg-auth-update" type="url" /></div>
+    <div class="field-group"><label>Webhook Quản lý User (POST)</label><input id="cfg-auth-admin" type="url" /></div>
+    <div class="field-group"><label>Webhook Đọc dữ liệu (GET)</label><input id="cfg-read" type="url" /></div>
+    <div class="field-group"><label>Webhook Cập nhật (POST)</label><input id="cfg-write" type="url" /></div>
+    <div class="field-group"><label>Webhook Thêm việc (POST)</label><input id="cfg-add" type="url" /></div>
+    <div class="field-group"><label>Webhook Báo cáo (POST)</label><input id="cfg-report" type="url" /></div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal()">Đóng</button><button class="btn btn-primary" onclick="saveConfig()">Lưu cấu hình</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-admin-users">
+  <div class="modal xl">
+    <h2>👥 Quản lý Tài khoản (Dành cho Admin)</h2>
+    <div style="display: flex; gap: 20px;">
+      <div style="flex: 1;"><div class="table-wrap" style="max-height:400px; overflow-y:auto;"><table class="task-table" id="admin-users-table"><thead><tr><th>Username</th><th>Mật khẩu</th><th>Họ tên</th><th>Quyền</th><th>Email</th><th style="width:100px">Hành động</th></tr></thead><tbody></tbody></table></div></div>
+      <div style="width: 280px; background: var(--surface2); padding: 15px; border-radius: 8px;">
+         <h3 id="admin-user-form-title" style="font-size: 14px; margin-bottom: 10px; color: var(--blue);">➕ Thêm tài khoản mới</h3>
+         <input type="hidden" id="admin-u-row">
+         <div class="field-group"><label>Username</label><input type="text" id="admin-u-id"></div>
+         <div class="field-group"><label>Mật khẩu</label><input type="text" id="admin-u-pass"></div>
+         <div class="field-group"><label>Họ tên hiển thị</label><input type="text" id="admin-u-name"></div>
+         <div class="field-group"><label>Email nhận việc</label><input type="email" id="admin-u-email"></div>
+         <div class="field-group">
+           <label>Phân quyền</label>
+           <select id="admin-u-role">
+             <option value="Operator">Operator (Chỉ xem việc mình)</option>
+             <option value="Supervisor">Supervisor (Xem toàn bộ việc)</option>
+             <option value="Admin">Admin (Toàn quyền)</option>
+           </select>
+         </div>
+         <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="saveAdminUser()">💾 Lưu tài khoản</button>
+         <button class="btn" style="width:100%; justify-content:center; margin-top:8px;" onclick="resetAdminUserForm()">🔄 Làm mới Form</button>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="document.getElementById('modal-admin-users').classList.remove('open')">Đóng</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-add">
+    <div class="modal xl">
+        <h2>➕ Thêm công việc mới</h2>
+        <div class="form-row-2">
+            <div class="field-group"><label>Ngày giao việc <span style="color:var(--red)">*</span></label><input type="date" id="add-ngaygiao"></div>
+            <div class="field-group"><label>Deadline <span style="color:var(--red)">*</span></label><input type="date" id="add-deadline"></div>
+        </div>
+        <div class="form-row-2">
+            <div class="field-group">
+                <label>Nơi giao việc (Chọn nhiều) <span style="color:var(--red)">*</span></label>
+                <div class="custom-dropdown" id="dd-ngv">
+                    <div class="dd-header" onclick="toggleDropdown('ngv')"><span id="lbl-ngv">-- Chọn nơi giao --</span> <span>▼</span></div>
+                    <div class="dd-menu" id="menu-ngv"><div class="dd-list" id="list-ngv"></div><div class="dd-footer"><input type="text" id="new-ngv" placeholder="Mới..."><button class="btn btn-sm btn-primary" onclick="addOption('ngv')">Thêm</button></div></div>
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Người phụ trách (Chọn nhiều) <span style="color:var(--red)">*</span></label>
+                <div class="custom-dropdown" id="dd-npt">
+                    <div class="dd-header" onclick="toggleDropdown('npt')"><span id="lbl-npt">-- Chọn người --</span> <span>▼</span></div>
+                    <div class="dd-menu" id="menu-npt"><div class="dd-list" id="list-npt"></div><div class="dd-footer"><input type="text" id="new-npt" placeholder="Mới..."><button class="btn btn-sm btn-primary" onclick="addOption('npt')">Thêm</button></div></div>
+                </div>
+            </div>
+        </div>
+        <div class="form-row-2">
+            <div class="field-group"><label>Nhóm CV</label><div class="custom-dropdown" id="dd-nhomcv"><div class="dd-header" onclick="toggleDropdown('nhomcv')"><span id="lbl-nhomcv">-- Chọn --</span></div><div class="dd-menu" id="menu-nhomcv"><div class="dd-list" id="list-nhomcv"></div></div></div></div>
+
+
+<div class="field-group">
+  <label>Phân loại</label>
+  <div class="custom-dropdown" id="dd-phanloai">
+    <div class="dd-header" onclick="toggleDropdown('phanloai')">
+      <span id="lbl-phanloai">-- Chọn --</span>
+    </div>
+    <div class="dd-menu" id="menu-phanloai">
+      <div class="dd-list" id="list-phanloai"></div>
+      
+      <div class="dd-footer">
+        <input type="text" id="new-phanloai" placeholder="Mới...">
+        <button class="btn btn-sm btn-primary" onclick="addOption('phanloai')">Thêm</button>
+      </div>
+      </div>
+  </div>
+</div>
+
+        </div>
+        <div class="field-group"><label>Nội dung chi tiết</label><textarea id="add-noidung" placeholder="Nội dung..."></textarea></div>
+        <div class="modal-footer"><button class="btn" onclick="closeAddModal()">Huỷ</button><button class="btn btn-green" onclick="submitNewTask()">🚀 Giao Việc & Báo Email</button></div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="modal-report">
+  <div class="modal">
+    <h2>📈 Báo cáo cuối ngày</h2>
+    <p style="font-size: 13px; color: var(--text2); margin-bottom: 12px;">Hệ thống đã tự động tổng hợp tiến độ của bạn trong hôm nay:</p>
+    <div class="report-box" id="report-summary-box">
+      </div>
+    <div class="field-group">
+      <label>Ghi chú thêm (Tùy chọn)</label>
+      <textarea id="report-note" placeholder="Nhập khó khăn, đề xuất hoặc lời nhắn gửi sếp..." style="height: 80px"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('modal-report').classList.remove('open')">Để sau</button>
+      <button class="btn btn-purple" onclick="submitDailyReport()">✉️ Gửi Báo Cáo</button>
+    </div>
+  </div>
+</div>
+
+<div class="topbar">
+  <div class="logo">📋 <span>CPC1HN</span> · QLCL Dashboard</div>
+  <div class="topbar-right">
+    <div class="sync-status"><span class="sync-dot" id="sync-dot"></span> <span id="sync-text">Chưa kết nối</span></div>
+    <span id="user-greeting" style="font-weight:600; font-size:13px; color:var(--blue); margin-left: 10px"></span>
+    
+    <button class="btn btn-sm btn-purple" onclick="openReportModal()">📈 Báo cáo ngày</button>
+    <button class="btn btn-sm" onclick="document.getElementById('modal-pwd').classList.add('open')">🔑 Đổi Pass</button>
+    <button class="btn btn-sm btn-primary" id="btn-admin-users" style="display:none; background:#7c3aed; border-color:#7c3aed" onclick="openAdminUsers()">👥 Quản lý User</button>
+    <button class="btn btn-sm btn-green" id="btn-add-task" onclick="openAddModal()">➕ Thêm việc</button>
+    <button class="btn btn-sm" onclick="fetchData()">🔄 Làm mới</button>
+    <button class="btn btn-sm btn-primary" id="btn-config" onclick="openModal()">⚙️</button>
+    <button class="btn btn-sm" style="color:var(--red); background:var(--red-bg)" onclick="logout()">🚪 Thoát</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="alert-bar" id="alert-bar" style="display:none">
+    <span id="alert-text"></span>
+  </div>
+
+  <div id="focus-board" class="focus-board">
+    <div class="focus-title">🚨 CẦN XỬ LÝ GẤP HÔM NAY</div>
+    <div class="focus-grid" id="focus-grid">
+      </div>
+  </div>
+
+  <div class="metrics" id="metrics">
+    <div class="mcard m-blue">
+      <div class="mcard-label">📋 Tổng công việc</div>
+      <div class="mcard-val" id="m-total">0</div>
+      <div class="mcard-sub">Theo bộ lọc</div>
+    </div>
+    <div class="mcard m-green">
+      <div class="mcard-label">✅ Hoàn thành</div>
+      <div class="mcard-val" id="m-done">0 (0%)</div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill-done" style="background:var(--green);width:0%"></div></div>
+    </div>
+    <div class="mcard m-blue">
+      <div class="mcard-label">🔄 Đang thực hiện</div>
+      <div class="mcard-val" id="m-prog">0 (0%)</div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill-prog" style="background:var(--blue);width:0%"></div></div>
+    </div>
+    <div class="mcard m-amber">
+      <div class="mcard-label">⏳ Chờ xử lý</div>
+      <div class="mcard-val" id="m-pend">0 (0%)</div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill-pend" style="background:#d97706;width:0%"></div></div>
+    </div>
+    <div class="mcard m-red">
+      <div class="mcard-label">🚨 Quá hạn</div>
+      <div class="mcard-val" id="m-over">0 (0%)</div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill-over" style="background:var(--red);width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📝 Danh sách công việc</div>
+        <div style="display:flex;gap:8px;">
+          <select id="filter-person" class="status-sel" onchange="render()"><option value="">Tất cả người</option></select>
+          <select id="filter-source" class="status-sel" onchange="render()"><option value="">Tất cả nơi giao</option></select>
+          <select id="filter-group" class="status-sel" onchange="render()"><option value="">Tất cả nhóm</option></select>
+	 <input type="date" id="filter-from" class="status-sel" onchange="render()" title="Từ ngày">
+ 	 <input type="date" id="filter-to" class="status-sel" onchange="render()" title="Đến ngày">
+        </div>
+      </div>
+      <div class="filters">
+        <button class="filter-btn active" onclick="setFilter('all',this)">Tất cả</button>
+        <button class="filter-btn" onclick="setFilter('overdue',this)">🚨 Quá hạn</button>
+        <button class="filter-btn" onclick="setFilter('today',this)">📅 Hôm nay</button>
+        <button class="filter-btn" onclick="setFilter('inprogress',this)">🔄 Đang làm</button>
+	<button class="filter-btn" onclick="setFilter('pending',this)">⏳ Chờ xử lý</button>
+        <button class="filter-btn" onclick="setFilter('done',this)">✅ Hoàn thành</button>
+      </div>
+      <div style="position:relative; min-height: 200px">
+        <div class="loading-overlay" id="tbl-loading" style="display:none">Đang tải...</div>
+        <table class="task-table">
+          <thead><tr><th>STT</th><th>Nội dung</th><th>Deadline</th><th>Phụ trách</th><th>Nơi giao</th><th>Nhóm</th><th>Trạng thái</th><th style="width:100px">Hành động</th></tr></thead>
+          <tbody id="task-tbody"></tbody>
+        </table>
+        <div class="empty" id="empty-msg" style="display:none">Không có dữ liệu</div>
+      </div>
+    </div>
+    <div class="sidebar">
+      <div class="card"><div class="card-header"><div class="card-title">📊 Tiến độ</div></div><div class="card-body"><div class="chart-wrap"><canvas id="donut"></canvas></div><div class="legend" id="chart-legend"></div></div></div>
+      <div class="card"><div class="card-header"><div class="card-title">🔔 Nhắc nhở</div></div><div class="card-body" id="remind-list" style="padding: 10px 18px"></div></div>
+      <div class="card"><div class="card-header"><div class="card-title">👥 Phụ trách</div></div><div class="card-body"><div class="chart-wrap" style="height:180px"><canvas id="bar-chart"></canvas></div></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 🟢 KHAI BÁO CÁC BIẾN TOÀN CỤC BỊ THIẾU
+let currentUser = null;
+let tasks = [], filterMode = 'all'; 
+let donutChart = null, barChart = null;
+
+// 🟢 HÀM BỘ LỌC ĐÃ ĐƯỢC THÊM LẠI
+function setFilter(mode, el) { 
+  filterMode = mode; 
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); 
+  el.classList.add('active'); 
+  render(); 
+}
+
+// 🟢 ĐIỀN SẴN CÁC LINK WEBHOOK MẶC ĐỊNH
+let cfg = {
+  authRead: sessionStorage.getItem('cpc_auth_read') || 'http://localhost:5678/webhook/auth-read',
+  authUpdate: sessionStorage.getItem('cpc_auth_update') || 'http://localhost:5678/webhook/auth-update',
+  authAdmin: sessionStorage.getItem('cpc_auth_admin') || 'http://localhost:5678/webhook/auth-admin',
+  readUrl: sessionStorage.getItem('n8n_read') || 'http://localhost:5678/webhook/dashboard-read',
+  writeUrl: sessionStorage.getItem('n8n_write') || 'http://localhost:5678/webhook/dashboard-update',
+  addUrl: sessionStorage.getItem('n8n_add') || 'http://localhost:5678/webhook/dashboard-add1',
+  reportUrl: sessionStorage.getItem('n8n_report') || 'http://localhost:5678/webhook/dashboard-report',
+  interval: parseInt(sessionStorage.getItem('n8n_interval') || '5')
+};
+
+function getVal(obj, keyName) {
+  if (!obj) return '';
+  const foundKey = Object.keys(obj).find(k => String(k).trim().toLowerCase() === String(keyName).trim().toLowerCase());
+  return foundKey ? obj[foundKey] : '';
+}
+
+async function login() {
+  const uInput = document.getElementById('login-user').value.trim().toLowerCase();
+  const pInput = document.getElementById('login-pass').value;
+  if(!cfg.authRead) return alert("Vui lòng cấu hình Webhook trước!");
+  setSyncing();
+  try {
+    const res = await fetch(cfg.authRead);
+    const users = await res.json();
+    sessionStorage.setItem('cpc_user_directory', JSON.stringify(users));
+    
+    const user = users.find(x => String(getVal(x, 'Username')).toLowerCase() === uInput && String(getVal(x, 'Password')) === pInput);
+    if (user) {
+      const rawUser = getVal(user, 'Username');
+      const finalName = getVal(user, 'FullName') || getVal(user, 'Fullname') || getVal(user, 'Họ tên') || rawUser;
+      const normalizedRole = String(getVal(user, 'Role') || '').toLowerCase().trim();
+      const properRole = normalizedRole === 'admin' ? 'Admin' : (normalizedRole === 'supervisor' ? 'Supervisor' : 'Operator');
+
+      currentUser = { username: rawUser, role: normalizedRole, properRole: properRole, name: finalName };
+      sessionStorage.setItem('cpc_user_session', JSON.stringify(currentUser));
+      document.getElementById('login-screen').style.display = 'none';
+      applyRBAC(); fetchData(); setInterval(fetchData, cfg.interval * 60000);
+    } else { document.getElementById('login-err').style.display = 'block'; }
+  } catch(e) { alert("Lỗi kết nối server Auth! Hãy kiểm tra n8n đã được bật Active chưa."); }
+}
+
+function applyRBAC() {
+  document.getElementById('user-greeting').textContent = `👤 ${currentUser.name}`;
+  if (currentUser.role === 'admin') {
+      document.getElementById('btn-config').style.display = 'inline-flex';
+      document.getElementById('btn-admin-users').style.display = 'inline-flex'; 
+  } else if (currentUser.role === 'supervisor') {
+      document.getElementById('btn-config').style.display = 'none';
+      document.getElementById('btn-admin-users').style.display = 'none';
+  } else { 
+      document.getElementById('btn-config').style.display = 'none';
+      document.getElementById('btn-add-task').style.display = 'none';
+      document.getElementById('filter-person').style.display = 'none';
+      document.getElementById('btn-admin-users').style.display = 'none';
+  }
+}
+
+async function updatePassword() {
+  const p1 = document.getElementById('new-pwd').value; const p2 = document.getElementById('confirm-pwd').value;
+  if (p1.length < 6) return alert("Mật khẩu ít nhất 6 ký tự!"); if (p1 !== p2) return alert("Xác nhận mật khẩu không khớp!");
+  try {
+    await fetch(cfg.authAdmin, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'edit', Username: currentUser.username, Password: p1, FullName: currentUser.name, Role: currentUser.properRole }) });
+    alert("Đổi mật khẩu thành công!"); document.getElementById('modal-pwd').classList.remove('open'); 
+  } catch(e) { alert("Lỗi cập nhật!"); }
+}
+
+let adminUserList = [];
+async function openAdminUsers() {
+  setSyncing();
+  try {
+    const res = await fetch(cfg.authRead); adminUserList = await res.json();
+    document.querySelector('#admin-users-table tbody').innerHTML = adminUserList.map(u => {
+      const uName = getVal(u, 'Username'), uPass = getVal(u, 'Password'), uRole = getVal(u, 'Role'), uEmail = getVal(u, 'Email');
+      const dName = getVal(u, 'FullName') || getVal(u, 'Fullname') || getVal(u, 'Họ tên') || '';
+      const actualRow = getVal(u, 'row_number') || getVal(u, 'rowNumber') || ''; 
+      return `<tr><td><strong>${uName}</strong></td><td style="color:var(--amber); font-family:monospace">${uPass}</td><td>${dName}</td><td><span class="badge ${String(uRole).toLowerCase().trim()==='admin'?'badge-admin':(String(uRole).toLowerCase().trim()==='supervisor'?'badge-super':'badge-oper')}">${uRole}</span></td><td>${uEmail}</td><td><button class="btn btn-sm" onclick="editAdminUser('${uName}')">Sửa</button> <button class="btn btn-sm" style="color:var(--red); border-color:#fca5a5" onclick="deleteAdminUser('${actualRow}', '${uName}')">Xóa</button></td></tr>`
+    }).join('');
+    document.getElementById('modal-admin-users').classList.add('open'); setSyncOk('Đã tải danh sách User.');
+  } catch(e) { showSyncErr('Lỗi tải danh sách.'); }
+}
+
+async function saveAdminUser() {
+  const row = document.getElementById('admin-u-row').value, user = document.getElementById('admin-u-id').value.trim(), pass = document.getElementById('admin-u-pass').value.trim(), name = document.getElementById('admin-u-name').value.trim(), email = document.getElementById('admin-u-email').value.trim(), role = document.getElementById('admin-u-role').value;
+  if(!user || !pass) return alert("Thiếu thông tin!");
+  try { await fetch(cfg.authAdmin, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: row ? 'edit' : 'add', row_number: row, Username: user, Password: pass, FullName: name, Email: email, Role: role }) }); alert('Lưu thành công!'); resetAdminUserForm(); openAdminUsers(); } catch(e) { alert('Lỗi lưu User!'); }
+}
+
+async function deleteAdminUser(row, username) {
+  if(!confirm(`⚠️ XÓA VĨNH VIỄN tài khoản: ${username}?`)) return; setSyncing();
+  try { await fetch(cfg.authAdmin, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'delete', Username: username }) }); openAdminUsers(); } catch(e) { alert('Lỗi khi xóa!'); }
+}
+
+function logout() { sessionStorage.removeItem('cpc_user_session'); location.reload(); }
+function resetAdminUserForm() { document.getElementById('admin-u-row').value = ''; document.getElementById('admin-u-id').value = ''; document.getElementById('admin-u-id').disabled = false; document.getElementById('admin-u-pass').value = ''; document.getElementById('admin-u-name').value = ''; document.getElementById('admin-u-email').value = ''; document.getElementById('admin-u-role').value = 'Operator'; document.getElementById('admin-user-form-title').textContent = '➕ Thêm tài khoản mới'; }
+function editAdminUser(username) { 
+  const u = adminUserList.find(x => getVal(x, 'Username') === username); if(!u) return; 
+  document.getElementById('admin-u-row').value = getVal(u, 'row_number') || getVal(u, 'rowNumber') || ''; document.getElementById('admin-u-id').value = getVal(u, 'Username'); document.getElementById('admin-u-id').disabled = true; document.getElementById('admin-u-pass').value = getVal(u, 'Password'); document.getElementById('admin-u-name').value = getVal(u, 'FullName') || getVal(u, 'Fullname') || getVal(u, 'Họ tên') || ''; document.getElementById('admin-u-email').value = getVal(u, 'Email'); 
+  const rLower = String(getVal(u, 'Role')).toLowerCase().trim(); document.getElementById('admin-u-role').value = rLower === 'admin' ? 'Admin' : (rLower === 'supervisor' ? 'Supervisor' : 'Operator'); 
+  document.getElementById('admin-user-form-title').innerHTML = `Sửa: ${getVal(u, 'Username')}`; 
+}
+
+function safeString(val) { return (val === null || val === undefined) ? '' : String(val); }
+function excelToDate(val) { if (!val) return null; if (typeof val === 'string' && val.includes('/')) { const p = val.split('/'); if (p.length === 3) return new Date(p[2], p[1] - 1, p[0]); } if (!isNaN(val)) return new Date(Math.round((parseFloat(val) - 25569) * 86400 * 1000)); let d = new Date(val); return isNaN(d.getTime()) ? null : d; }
+function mapStatus(r) { if (!r) return 'pending'; const s = safeString(r).toLowerCase(); if (s.includes('hoàn thành')) return 'done'; if (s.includes('đang')) return 'inprogress'; return 'pending'; }
+
+function parseRows(rows) {
+  return rows.map((r, i) => ({ 
+    id: getVal(r, 'STT') || (i + 1), row: getVal(r, 'rowNumber') || getVal(r, 'row_number') || (i + 2), 
+    name: safeString(getVal(r, 'Nội dung công việc') || getVal(r, 'Nội dung') || 'Không tên').trim(), 
+    deadline: excelToDate(getVal(r, 'Deadline')), assignee: safeString(getVal(r, 'Người phụ trách') || '?'), 
+    source: safeString(getVal(r, 'Nơi giao việc') || ''), group: safeString(getVal(r, 'Nhóm công việc') || ''), category: safeString(getVal(r, 'Phân loại') || ''), 
+    status: mapStatus(getVal(r, 'Tình trạng hiện tại (Status)')) 
+  })); 
+}
+
+const now = () => new Date(); 
+function isOverdue(t) { if (!t.deadline || t.status === 'done') return false; const d = new Date(t.deadline); d.setHours(23, 59, 59); return d < new Date(); } 
+function isToday(t) { if (!t.deadline || t.status === 'done') return false; const d = t.deadline, n = now(); return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate(); }
+
+async function fetchData() { 
+  if (!cfg.readUrl) return; setSyncing(); document.getElementById('tbl-loading').style.display = 'flex';
+  try { 
+    const res = await fetch(cfg.readUrl); const data = await res.json(); 
+    let rawRows = []; if (Array.isArray(data)) { if (data.length > 0 && data[0].data && Array.isArray(data[0].data)) { rawRows = data[0].data; } else { rawRows = data; } } else { rawRows = data.rows || data.data || [data]; }
+    tasks = parseRows(rawRows); updateFilters(); render(); setSyncOk(`Cập nhật: ${new Date().toLocaleTimeString('vi-VN')}`); 
+  } catch (e) { showSyncErr('Lỗi tải dữ liệu'); } finally { document.getElementById('tbl-loading').style.display = 'none'; }
+}
+
+function getFilteredTasks() { 
+  let list = [...tasks]; 
+  if (currentUser && currentUser.role === 'operator') { list = list.filter(t => t.assignee.includes(currentUser.name)); }
+  
+  const fP = document.getElementById('filter-person').value, 
+        fS = document.getElementById('filter-source').value, 
+        fG = document.getElementById('filter-group').value;
+  
+  // Lấy giá trị lọc ngày
+  const fFrom = document.getElementById('filter-from').value;
+  const fTo = document.getElementById('filter-to').value;
+
+  if (fP) list = list.filter(t => t.assignee.split(',').map(x=>x.trim()).includes(fP)); 
+  if (fS) list = list.filter(t => t.source.split(',').map(x=>x.trim()).includes(fS)); 
+  if (fG) list = list.filter(t => t.group === fG);
+
+  // LOGIC LỌC THEO KHOẢNG NGÀY (MỚI BỔ SUNG)
+  if (fFrom) {
+    const dFrom = new Date(fFrom); dFrom.setHours(0,0,0,0);
+    list = list.filter(t => t.deadline && t.deadline >= dFrom);
+  }
+  if (fTo) {
+    const dTo = new Date(fTo); dTo.setHours(23,59,59,999);
+    list = list.filter(t => t.deadline && t.deadline <= dTo);
+  }
+
+  if (filterMode === 'overdue') list = list.filter(t => isOverdue(t)); 
+  else if (filterMode === 'today') list = list.filter(t => isToday(t)); 
+  else if (filterMode === 'inprogress') list = list.filter(t => t.status === 'inprogress'); 
+  else if (filterMode === 'done') list = list.filter(t => t.status === 'done'); 
+  else if (filterMode === 'pending') list = list.filter(t => t.status === 'pending' && !isOverdue(t)); // Lọc Chờ xử lý (không tính quá hạn)
+  else if (filterMode !== 'all') list = list.filter(t => t.status === filterMode);
+  
+  return list; 
+}
+
+function render() { 
+  const list = getFilteredTasks(); 
+  
+  // 🟢 CẬP NHẬT CÁC CON SỐ VÀ TỶ LỆ (%)
+  const total = list.length;
+  const done = list.filter(t=>t.status==='done').length;
+  const prog = list.filter(t=>t.status==='inprogress').length;
+  const pend = list.filter(t=>t.status==='pending' && !isOverdue(t)).length;
+  const over = list.filter(t=>isOverdue(t)).length;
+  
+  const pct = (val) => total ? Math.round((val / total) * 100) : 0;
+
+  document.getElementById('m-total').textContent = total; 
+  
+  document.getElementById('m-done').textContent = `${done} (${pct(done)}%)`; 
+  document.getElementById('prog-fill-done').style.width = `${pct(done)}%`;
+
+  document.getElementById('m-prog').textContent = `${prog} (${pct(prog)}%)`; 
+  document.getElementById('prog-fill-prog').style.width = `${pct(prog)}%`;
+
+  document.getElementById('m-pend').textContent = `${pend} (${pct(pend)}%)`; 
+  document.getElementById('prog-fill-pend').style.width = `${pct(pend)}%`;
+
+  document.getElementById('m-over').textContent = `${over} (${pct(over)}%)`; 
+  document.getElementById('prog-fill-over').style.width = `${pct(over)}%`;
+  
+  // 🟢 THANH CẢNH BÁO MÀU ĐỎ TỰ ĐỘNG ĐỔI THEO BỘ LỌC
+  const allOverdue = list.filter(t => isOverdue(t));
+  if (allOverdue.length > 0) {
+    document.getElementById('alert-bar').style.display = 'flex';
+    document.getElementById('alert-text').innerHTML = `<strong>${allOverdue.length} việc quá hạn:</strong> ` + allOverdue.map(t => t.name).join(', ');
+  } else {
+    document.getElementById('alert-bar').style.display = 'none';
+  }
+
+  renderTable(list); 
+  renderChart(list); 
+  renderBarChart(list); 
+  renderReminders(list);
+  renderFocusBoard(list); // Gọi bảng cảnh báo focus để nó cũng tự đổi theo bộ lọc
+}
+
+// 🟢 BẢNG FOCUS CẢNH BÁO VIỆC GẤP (CŨNG TỰ ĐỔI THEO BỘ LỌC)
+function renderFocusBoard(filteredList) {
+  const fb = document.getElementById('focus-board');
+  const fg = document.getElementById('focus-grid');
+  
+  // Lọc việc cấp bách (quá hạn hoặc hạn hôm nay) từ danh sách ĐÃ ĐƯỢC LỌC
+  const focusTasks = filteredList.filter(t => t.status !== 'done' && (isOverdue(t) || isToday(t)));
+
+  if (focusTasks.length === 0) { fb.style.display = 'none'; return; }
+  
+  fb.style.display = 'block';
+  fg.innerHTML = focusTasks.map(t => {
+    const isOvr = isOverdue(t);
+    const color = isOvr ? 'var(--red)' : '#d97706';
+    const bg = isOvr ? '#fef2f2' : '#fffbeb';
+    const border = isOvr ? '#ef4444' : '#f59e0b';
+    return `
+      <div class="focus-item" style="border-left-color: ${border}; background: ${bg}">
+        <div class="focus-name">${t.name}</div>
+        <div class="focus-meta">
+          <span style="color: ${color}; font-weight: bold">${isOvr ? '🚨 Quá hạn' : '⚠️ Hạn hôm nay'} (${t.deadline.toLocaleDateString('vi-VN')})</span>
+          <select class="status-sel" onchange="onStatusChange('${t.id}', this.value)" style="padding: 2px 6px; font-size: 11px">
+            <option value="pending" ${t.status==='pending'?'selected':''}>⏳ Đang chờ</option>
+            <option value="inprogress" ${t.status==='inprogress'?'selected':''}>🔄 Đang làm</option>
+            <option value="done">✅ Hoàn thành</option>
+          </select>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 🟢 TÍNH NĂNG BÁO CÁO CUỐI NGÀY
+function openReportModal() {
+  const myTasks = tasks.filter(t => t.assignee.includes(currentUser.name));
+  const doneToday = myTasks.filter(t => t.status === 'done');
+  const inProg = myTasks.filter(t => t.status === 'inprogress');
+  
+  let html = `<strong>👨‍💻 Người báo cáo:</strong> ${currentUser.name}<br><br>`;
+  html += `<strong>✅ Đã hoàn thành (${doneToday.length}):</strong><br>`;
+  html += doneToday.length ? doneToday.map(t => `<div class="report-list">- ${t.name}</div>`).join('') : '<div class="report-list"><em>Chưa có</em></div>';
+  
+  html += `<br><strong>🔄 Đang thực hiện (${inProg.length}):</strong><br>`;
+  html += inProg.length ? inProg.map(t => `<div class="report-list">- ${t.name}</div>`).join('') : '<div class="report-list"><em>Không có</em></div>';
+
+  document.getElementById('report-summary-box').innerHTML = html;
+  document.getElementById('report-note').value = '';
+  document.getElementById('modal-report').classList.add('open');
+}
+
+async function submitDailyReport() {
+  if (!cfg.reportUrl) return alert("⚠️ Cần cấu hình link Webhook Báo Cáo Ngày (n8n)!");
+  const note = document.getElementById('report-note').value;
+  const summaryHtml = document.getElementById('report-summary-box').innerHTML;
+  
+  setSyncing();
+  try {
+    await fetch(cfg.reportUrl, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        Sender: currentUser.name,
+        Date: new Date().toLocaleDateString('vi-VN'),
+        SummaryData: summaryHtml,
+        Notes: note
+      })
+    });
+    setSyncOk('✅ Gửi báo cáo thành công!');
+    document.getElementById('modal-report').classList.remove('open');
+  } catch(e) {
+    showSyncErr('Lỗi gửi báo cáo!');
+    alert("Không gửi được! Hãy kiểm tra lại link n8n Báo cáo.");
+  }
+}
+
+function renderTable(list) {
+  document.getElementById('task-tbody').innerHTML = list.map(t => {
+    const over = isOverdue(t);
+    const isDone = t.status === 'done';
+    const isWaiting = t.extStatus === 'Chờ duyệt';
+    
+    return `<tr>
+      <td style="color:var(--text3);text-align:center">${t.id}</td>
+      <td>
+        <div class="task-name ${isDone?'done':''}">${t.name} ${t.extCount > 0 ? `<span class="badge-gh">GH: ${t.extCount}</span>`:''}</div>
+        ${isWaiting ? '<small style="color:orange; display:block">⏳ Đang xin gia hạn...</small>' : ''}
+      </td>
+      <td class="${over?'dl-overdue':'dl-text'}">${t.deadline ? t.deadline.toLocaleDateString('vi-VN') : '–'}</td>
+      <td>${t.assignee}</td>
+      <td>${t.source}</td>
+      <td>${t.group}</td>
+      <td>
+        <select class="status-sel" onchange="onStatusChange('${t.id}', this.value)">
+          <option value="pending" ${t.status==='pending'?'selected':''}>⏳ Chờ xử lý</option>
+          <option value="inprogress" ${t.status==='inprogress'?'selected':''}>🔄 Đang làm</option>
+          <option value="done" ${t.status==='done'?'selected':''}>✅ Hoàn thành</option>
+        </select>
+      </td>
+      <td>
+        <div class="action-dropdown">
+          <button class="action-btn" onclick="toggleActionMenu(event, '${t.id}')">Thao tác ▾</button>
+          <div class="action-menu" id="menu-act-${t.id}">
+            ${!isDone ? `<div class="action-item" onclick="openDoneModal('${t.id}')">✅ Xong & Báo cáo</div>` : ''}
+            ${!isDone && currentUser.role === 'operator' ? `<div class="action-item" onclick="openExtModal('${t.stt || t.id}')">⏳ Yêu cầu gia hạn</div>` : ''}
+            ${(currentUser.role === 'admin' || currentUser.role === 'supervisor') && isWaiting ? 
+              `<div class="action-item" onclick="openApproveModal('${t.id}')">🛎️ Duyệt gia hạn</div>` : ''}
+            <div class="action-item" onclick="openEval('${t.id}')">📊 Đánh giá (Sếp)</div>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// Hàm bổ trợ đóng mở menu
+function toggleActionMenu(e, id) {
+  e.stopPropagation();
+  const menu = document.getElementById(`menu-act-${id}`);
+  const isOpen = menu.classList.contains('open');
+  document.querySelectorAll('.action-menu').forEach(m => m.classList.remove('open'));
+  if (!isOpen) menu.classList.add('open');
+}
+document.addEventListener('click', () => document.querySelectorAll('.action-menu').forEach(m => m.classList.remove('open')));
+
+function updateFilters() { const curP = document.getElementById('filter-person').value, curS = document.getElementById('filter-source').value, curG = document.getElementById('filter-group').value; let baseList = [...tasks]; if (currentUser && currentUser.role === 'operator') baseList = baseList.filter(t => t.assignee.includes(currentUser.name)); const allP = new Set(); baseList.forEach(t => t.assignee.split(',').forEach(p => p.trim() && allP.add(p.trim()))); const allS = new Set(); baseList.forEach(t => t.source.split(',').forEach(s => s.trim() && allS.add(s.trim()))); const allG = new Set(); baseList.forEach(t => t.group && allG.add(t.group.trim())); document.getElementById('filter-person').innerHTML = '<option value="">Tất cả người</option>' + [...allP].sort().map(p => `<option value="${p}" ${p===curP?'selected':''}>${p}</option>`).join(''); document.getElementById('filter-source').innerHTML = '<option value="">Tất cả nơi giao</option>' + [...allS].sort().map(s => `<option value="${s}" ${s===curS?'selected':''}>${s}</option>`).join(''); document.getElementById('filter-group').innerHTML = '<option value="">Tất cả nhóm</option>' + [...allG].sort().map(g => `<option value="${g}" ${g===curG?'selected':''}>${g}</option>`).join(''); }
+
+const defaultOptions = { ngv: ["Giao Ban", "Qm", "Qavp", "Thẩm Định", "Khác"], npt: ["Đỗ Đắc Anh Khoa", "Tào Tiến Hoàn", "Tôn Nữ Thiện My", "Phạm Huệ Nhi", "Nguyễn Thị Hương"], nhomcv: ["Cá Nhân", "Nhóm TĐ"], phanloai: ["SOP", "Đề Cương", "Báo Cáo", "BSC-QC", "Khác"] }; let userOpts = {}; try { userOpts = JSON.parse(localStorage.getItem('n8n_opts')) || {}; } catch(e) { userOpts = {}; } ['ngv', 'npt', 'nhomcv', 'phanloai'].forEach(k => { if (!userOpts[k] || !Array.isArray(userOpts[k])) userOpts[k] = defaultOptions[k]; });
+function saveOpts() { localStorage.setItem('n8n_opts', JSON.stringify(userOpts)); renderDropdowns(); } function formatTitleCase(str) { str = safeString(str); if(!str) return ''; return str.trim().toLowerCase().replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); }); } function formatSentenceCase(str) { str = safeString(str); if(!str) return ''; str = str.trim(); return str.charAt(0).toUpperCase() + str.slice(1); }
+function renderDropdowns() { const drawList = (type, inputType, nameAttr) => { const listDiv = document.getElementById(`list-${type}`); if(!listDiv) return; listDiv.innerHTML = userOpts[type].map((opt, i) => `<div class="dd-item"><label><input type="${inputType}" name="${nameAttr}" value="${opt}" class="chk-${type}" onchange="updateDropLabel('${type}')"> ${opt}</label><button class="del-opt" onclick="deleteOpt('${type}', ${i})" title="Xóa">✕</button></div>`).join(''); }; drawList('ngv', 'checkbox', ''); drawList('npt', 'checkbox', ''); drawList('nhomcv', 'radio', 'rad_nhom'); drawList('phanloai', 'radio', 'rad_loai'); ['ngv', 'npt', 'nhomcv', 'phanloai'].forEach(updateDropLabel); }
+function toggleDropdown(type) { const menu = document.getElementById(`menu-${type}`); const header = document.getElementById(`lbl-${type}`).parentElement; document.querySelectorAll('.dd-menu').forEach(m => { if(m !== menu) m.classList.remove('open'); }); document.querySelectorAll('.dd-header').forEach(h => { if(h !== header) h.classList.remove('active'); }); menu.classList.toggle('open'); header.classList.toggle('active'); } document.addEventListener('click', function(e) { if (!e.target.closest('.custom-dropdown')) { document.querySelectorAll('.dd-menu').forEach(m => m.classList.remove('open')); document.querySelectorAll('.dd-header').forEach(h => h.classList.remove('active')); } });
+function updateDropLabel(type) { const checked = Array.from(document.querySelectorAll(`.chk-${type}:checked`)).map(el => el.value); const lbl = document.getElementById(`lbl-${type}`); if (checked.length === 0) { lbl.textContent = `-- Chọn --`; lbl.style.color = 'var(--text3)'; } else { const txt = checked.join(', '); lbl.textContent = txt.length > 30 ? txt.substring(0, 30) + '...' : txt; lbl.style.color = 'var(--text)'; } }
+function addOption(type) { const input = document.getElementById(`new-${type}`); const val = formatTitleCase(input.value); if (!val) return; if (userOpts[type].some(opt => opt.toLowerCase() === val.toLowerCase())) return alert('⚠️ Tùy chọn này đã tồn tại!'); let checkedValues = Array.from(document.querySelectorAll(`.chk-${type}:checked`)).map(el => el.value); userOpts[type].push(val); input.value = ''; saveOpts(); checkedValues.forEach(v => { const box = document.querySelector(`.chk-${type}[value="${v}"]`); if(box) box.checked = true; }); updateDropLabel(type); } function deleteOpt(type, index) { if(confirm('Chắc chắn xóa tùy chọn này?')) { userOpts[type].splice(index, 1); saveOpts(); } }
+function openAddModal() { document.getElementById('modal-add').classList.add('open'); document.getElementById('add-ngaygiao').value = new Date().toISOString().split('T')[0]; document.getElementById('add-deadline').value = ''; document.getElementById('add-noidung').value = ''; renderDropdowns(); document.querySelectorAll('.dd-menu input').forEach(el => el.checked = false); ['ngv', 'npt', 'nhomcv', 'phanloai'].forEach(updateDropLabel); } function closeAddModal() { document.getElementById('modal-add').classList.remove('open'); }
+
+async function submitNewTask() {
+  if (!cfg.addUrl) return alert("⚠️ Cần nhập Webhook Thêm công việc!");
+  const nptArray = Array.from(document.querySelectorAll('.chk-npt:checked')).map(el => el.value); const ngv = Array.from(document.querySelectorAll('.chk-ngv:checked')).map(el => el.value).join(', '); const npt = nptArray.join(', '); const nhomcv = document.querySelector('.chk-nhomcv:checked')?.value || ''; const phanloai = document.querySelector('.chk-phanloai:checked')?.value || ''; const ngayGiao = document.getElementById('add-ngaygiao').value; const deadline = document.getElementById('add-deadline').value; const noiDung = formatSentenceCase(document.getElementById('add-noidung').value);
+  if (!ngayGiao || !deadline || !noiDung || !ngv || !npt || !nhomcv || !phanloai) return alert('🚨 Điền đầy đủ thông tin bắt buộc (*)!');
+
+  let nextSTT = 1; if (tasks.length > 0) { const maxSTT = Math.max(...tasks.map(t => parseInt(t.id) || 0)); nextSTT = maxSTT + 1; }
+  const noiDungGiaoViec = `-Nội dung: ${noiDung}\n-Deadline: ${formatDMY(deadline)}\n-Người phụ trách: ${npt}`;
+  let userDir = []; try { userDir = JSON.parse(sessionStorage.getItem('cpc_user_directory')) || []; } catch(e){}
+  const emailList = nptArray.map(name => { const u = userDir.find(x => (getVal(x, 'FullName') || getVal(x, 'Fullname') || getVal(x, 'Họ tên') || '') === name); return u && getVal(u, 'Email') ? getVal(u, 'Email') : null; }).filter(Boolean).join(', ');
+
+  setSyncing();
+  try {
+    await fetch(cfg.addUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "STT": nextSTT, "Ngày giao việc": formatDMY(ngayGiao), "Deadline": formatDMY(deadline), "Nơi giao việc": ngv, "Người phụ trách": npt, "Nhóm công việc": nhomcv, "Phân loại": phanloai, "Nội dung": noiDung, "Tình trạng hiện tại (Status)": "Chưa thực hiện", "Tình trạng giao việc": "Đã giao việc", "Nội dung giao việc": noiDungGiaoViec, "Email nhận": emailList }) });
+    setSyncOk('✅ Giao việc thành công!'); closeAddModal(); setTimeout(fetchData, 2000); 
+  } catch (e) { showSyncErr('Lỗi!'); alert('❌ Lỗi: ' + e.message); }
+}
+
+// Biến tạm lưu ID công việc đang chờ xác nhận
+let pendingDoneId = null;
+
+async function onStatusChange(taskId, newVal) {
+// Thêm vào trong khối if (newVal === 'done') của hàm onStatusChange
+const bayGio = new Date();
+const infoString = `${currentUser.name} | ${bayGio.toLocaleTimeString('vi-VN')} ngày ${bayGio.toLocaleDateString('vi-VN')}`;
+document.getElementById('done-reporter-info').value = infoString;  
+const t = tasks.find(x => x.id == taskId); 
+  if (!t) return;
+
+  // Nếu chọn Hoàn thành, hiện Modal thay vì gửi ngay
+  if (newVal === 'done') {
+    pendingDoneId = taskId;
+    document.getElementById('done-task-name').textContent = t.name;
+    document.getElementById('done-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('done-result').value = '';
+    document.getElementById('modal-done').classList.add('open');
+    return; // Dừng lại để đợi người dùng xác nhận trong Modal
+  }
+
+  // Đối với các trạng thái khác, giữ nguyên logic gốc
+  t.status = newVal; 
+  render(); 
+  if(!cfg.writeUrl) return; setSyncing();
+  try {
+    await fetch(cfg.writeUrl, { 
+      method: 'POST', 
+      body: JSON.stringify({ 
+        stt: t.id, 
+        row: t.row, 
+        field: "Tình trạng hiện tại (Status)", 
+        value: newVal === 'inprogress' ? 'Đang thực hiện' : 'Chưa thực hiện'
+      }) 
+    });
+    setSyncOk('Đã lưu!');
+  } catch(e) { showSyncErr('Lỗi!'); }
+}
+//
+function closeDoneModal() {
+  document.getElementById('modal-done').classList.remove('open');
+  pendingDoneId = null;
+  render(); // Vẽ lại để Reset dropdown nếu người dùng huỷ
+}
+
+async function confirmDone() {
+  const resText = document.getElementById('done-result').value.trim();
+  if (!resText) return alert("⚠️ Vui lòng nhập kết quả thực hiện!");
+  
+  const finishDate = document.getElementById('done-date').value;
+  const t = tasks.find(x => x.id == pendingDoneId);
+  const now = new Date();
+
+  setSyncing();
+  try {
+    await fetch(cfg.writeUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        stt: t.stt || t.id,
+        row: t.row,
+        value: "Hoàn thành", // SỬA: status -> value để khớp n8n
+        ket_qua: resText,
+        ngay_hoan_thanh: finishDate,
+        nguoi_bao_cao: currentUser.name,
+        gio_bao_cao: now.toLocaleTimeString('vi-VN'),
+        ngay_bao_cao_he_thong: now.toLocaleDateString('vi-VN')
+      })
+    });
+    
+    t.status = 'done';
+    setSyncOk('✅ Đã báo cáo hoàn thành!');
+    document.getElementById('modal-done').classList.remove('open');
+    render();
+    setTimeout(fetchData, 1500); 
+  } catch (e) {
+    showSyncErr('Lỗi gửi báo cáo!');
+  }
+}
+//
+function setSyncing() { document.getElementById('sync-dot').className = 'sync-dot syncing'; document.getElementById('sync-text').textContent = 'Đang đồng bộ…'; }
+function setSyncOk(msg) { document.getElementById('sync-dot').className = 'sync-dot ok'; document.getElementById('sync-text').textContent = msg; }
+function showSyncErr(msg) { document.getElementById('sync-dot').className = 'sync-dot err'; document.getElementById('sync-text').textContent = msg; }
+function openModal() { document.getElementById('cfg-auth-read').value = cfg.authRead; document.getElementById('cfg-auth-admin').value = cfg.authAdmin; document.getElementById('cfg-read').value = cfg.readUrl; document.getElementById('cfg-write').value = cfg.writeUrl; document.getElementById('cfg-add').value = cfg.addUrl; document.getElementById('cfg-report').value = cfg.reportUrl; document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function saveConfig() { cfg.authRead = document.getElementById('cfg-auth-read').value.trim(); cfg.authAdmin = document.getElementById('cfg-auth-admin').value.trim(); cfg.readUrl = document.getElementById('cfg-read').value.trim(); cfg.writeUrl = document.getElementById('cfg-write').value.trim(); cfg.addUrl = document.getElementById('cfg-add').value.trim(); cfg.reportUrl = document.getElementById('cfg-report').value.trim(); sessionStorage.setItem('cpc_auth_read', cfg.authRead); sessionStorage.setItem('cpc_auth_admin', cfg.authAdmin); sessionStorage.setItem('n8n_read', cfg.readUrl); sessionStorage.setItem('n8n_write', cfg.writeUrl); sessionStorage.setItem('n8n_add', cfg.addUrl); sessionStorage.setItem('n8n_report', cfg.reportUrl); closeModal(); location.reload(); }
+
+function renderChart(list) {
+  const data = [ list.filter(t => t.status === 'done').length, list.filter(t => t.status === 'inprogress').length, list.filter(t => t.status === 'pending' && !isOverdue(t)).length, list.filter(t => isOverdue(t)).length ];
+  const labels = ['Hoàn thành', 'Đang làm', 'Chờ xử lý', 'Quá hạn'], colors = ['#16a34a', '#2563eb', '#9ca3af', '#dc2626'];
+  document.getElementById('chart-legend').innerHTML = labels.map((l, i) => `<div class="legend-item"><span style="display:flex;align-items:center;gap:6px"><span class="legend-dot" style="background:${colors[i]}"></span>${l}</span><strong>${data[i]}</strong></div>`).join('');
+  if (donutChart) { donutChart.data.datasets[0].data = data; donutChart.update(); return; }
+  donutChart = new Chart(document.getElementById('donut'), { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
+}
+function renderBarChart(list) {
+  const pMap = {}; list.forEach(t => { const persons = t.assignee ? t.assignee.split(',').map(x=>x.trim()).filter(Boolean) : ['Khác']; if(persons.length === 0) persons.push('Khác'); persons.forEach(p => { if (!pMap[p]) pMap[p] = { tot: 0, dn: 0 }; pMap[p].tot++; if (t.status === 'done') pMap[p].dn++; }); });
+  const persons = Object.keys(pMap).sort(), totals = persons.map(p => pMap[p].tot), dones  = persons.map(p => pMap[p].dn);
+  if (barChart) { barChart.data.labels = persons; barChart.data.datasets[0].data = totals; barChart.data.datasets[1].data = dones; barChart.update(); return; }
+  barChart = new Chart(document.getElementById('bar-chart'), { type: 'bar', data: { labels: persons, datasets: [ { label: 'Tổng', data: totals, backgroundColor: '#bfdbfe' }, { label: 'Xong', data: dones, backgroundColor: '#86efac' } ]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
+}
+function renderReminders(list) {
+  const upc = list.filter(t => t.status !== 'done' && t.deadline).sort((a, b) => a.deadline - b.deadline).slice(0, 5);
+  const el = document.getElementById('remind-list');
+  if (!upc.length) { el.innerHTML = '<div class="empty">Không có nhắc nhở</div>'; return; }
+  el.innerHTML = upc.map(t => {
+    const over = isOverdue(t), diff = t.deadline - now(), bg = over ? 'var(--red-bg)' : (diff < 86400000 ? 'var(--amber-bg)' : 'var(--surface2)');
+    return `<div class="remind-item"><div class="remind-icon" style="background:${bg}">${over?'🚨':'🔔'}</div><div class="remind-text"><div class="remind-name">${t.name}</div><div class="remind-time" style="color:${over?'var(--red)':''}">${t.deadline.toLocaleDateString('vi-VN')} · ${t.assignee}</div></div></div>`;
+  }).join('');
+}
+
+(function init() { const session = sessionStorage.getItem('cpc_user_session'); if (session) { currentUser = JSON.parse(session); document.getElementById('login-screen').style.display = 'none'; applyRBAC(); if (cfg.readUrl) fetchData(); } })();
+</script>
+
+<div class="modal-backdrop" id="modal-done">
+  <div class="modal">
+    <h2><span style="color:var(--green)">✅</span> Xác nhận hoàn thành công việc</h2>
+    <div id="done-task-name" style="font-weight: 600; background: var(--surface2); padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid var(--blue);"></div>
+	<div class="field-group">
+	 <label>Thông tin ghi nhận hệ thống</label>
+  	<input type="text" id="done-reporter-info" disabled style="background: var(--surface2); color: var(--blue); font-weight: 500;">
+</div>
+    
+    <div class="field-group">
+      <label>Kết quả thực hiện <span style="color:var(--red)">*</span></label>
+      <textarea id="done-result" rows="4" placeholder="Mô tả kết quả đạt được, sản phẩm bàn giao, ghi chú..."></textarea>
+    </div>
+    
+    <div class="field-group">
+      <label>Ngày hoàn thành</label>
+      <input type="date" id="done-date">
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn" onclick="closeDoneModal()">Huỷ</button>
+      <button class="btn btn-green" onclick="confirmDone()">✅ Xác nhận hoàn thành</button>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="modal-eval">
+  <div class="modal xl">
+    <h2>📊 Đánh giá & Phê duyệt công việc</h2>
+    <div class="modal-task-label" id="eval-task-label" style="font-weight:600; background:var(--surface2); padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid var(--purple);">Tên công việc...</div>
+    
+    <div class="form-row-2">
+      <div class="field-group">
+        <label>Số lần gia hạn</label>
+        <input id="eval-rahan" type="number" min="0" value="0">
+      </div>
+      <div class="field-group">
+        <label>Đánh giá tiến độ</label>
+        <select id="eval-tiendo">
+          <option value="Đúng hạn">✅ Đúng hạn</option>
+          <option value="Trễ nhẹ">🟡 Trễ nhẹ</option>
+          <option value="Trễ nặng">🔴 Trễ nặng</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row-2">
+      <div class="field-group">
+        <label>Số lần góp ý / Chỉnh sửa <span style="color:red">*</span></label>
+        <input id="eval-gopy" type="number" min="0" value="0">
+      </div>
+      <div class="field-group">
+        <label>Đánh giá chất lượng <span style="color:red">*</span></label>
+        <select id="eval-chatluong">
+          <option value="Xuất sắc">⭐⭐⭐ Xuất sắc</option>
+          <option value="Tốt">⭐⭐ Tốt</option>
+          <option value="Đạt">⭐ Đạt</option>
+          <option value="Cần cải thiện">⚠️ Cần cải thiện</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>Thông tin người đánh giá & Thời gian</label>
+      <input type="text" id="eval-supervisor-info" disabled style="background:var(--surface2); color:var(--purple); font-weight:500;">
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('modal-eval').classList.remove('open')">Huỷ</button>
+      <button class="btn btn-primary" style="background:var(--purple); border-color:var(--purple)" onclick="saveEval()">💾 Lưu đánh giá lên Sheets</button>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="modal-extend">
+  <div class="modal">
+    <h2>⏳ Yêu cầu gia hạn công việc</h2>
+    <div id="ext-task-label" style="font-weight:600; margin-bottom:15px; color:var(--amber)"></div>
+    <div class="field-group">
+      <label>Deadline hiện tại</label>
+      <input type="text" id="ext-old-dl" disabled>
+    </div>
+    <div class="field-group">
+      <label>Ngày gia hạn mong muốn <span style="color:red">*</span></label>
+      <input type="date" id="ext-new-dl">
+    </div>
+    <div class="field-group">
+      <label>Lý do gia hạn</label>
+      <textarea id="ext-reason" rows="3" placeholder="Tại sao bạn cần thêm thời gian?"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('modal-extend').classList.remove('open')">Huỷ</button>
+      <button class="btn btn-amber" onclick="submitExtRequest()">🚀 Gửi yêu cầu duyệt</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-approve">
+  <div class="modal">
+    <h2>🔔 Phê duyệt gia hạn</h2>
+    <div id="app-info" style="background:var(--surface2); padding:15px; border-radius:10px; margin-bottom:15px; font-size:13px;"></div>
+    <div class="field-group">
+      <label>Số lần đã gia hạn hiện tại</label>
+      <input type="text" id="app-count" disabled>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-red" onclick="approveExt(false)">❌ Từ chối</button>
+      <button class="btn btn-green" onclick="approveExt(true)">✅ Đồng ý & Tự động +1</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
